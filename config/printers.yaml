@@ -1,0 +1,17 @@
+printers:
+  default:
+    name: "Front Desk ZD411"
+    ip: "REPLACE_ME"    # your printer's LAN IP, e.g. "10.10.5.50"
+    port: 9100
+    dpi: 203            # confirm on your printer's config printout: 203 or 300 dpi
+    label_width_in: 2.0   # across the printhead (ZD411 max ~2.2")
+    label_height_in: 4.0  # feed direction; label is designed landscape (see README)
+    connect_timeout_seconds: 5
+    retries: 3
+    qr_magnification: 6   # ZPL ^BQ magnification (1-10 max); tune against a real printout --
+                          # see label_renderer.py's _QR_DOTS_PER_MAGNIFICATION_UNIT_AT_203DPI
+  # add more printers here as needed later:
+  # shop:
+  #   name: "Shop ZD411"
+  #   ip: "10.20.5.50"
+  #   ...

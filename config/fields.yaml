@@ -1,0 +1,26 @@
+# Each entry: <template variable>: <path into the Halo ticket JSON>
+#   - dotted paths walk nested objects: "site.name"
+#   - the "cf:" prefix looks up a custom field BY NAME in the ticket's
+#     customfields array (Halo returns custom fields as a list of
+#     {name, value} objects, not flat keys)
+#   - a list of paths is a compound field: each is resolved and non-empty
+#     parts are joined with ", " (useful for multi-line addresses, etc.)
+#   - a missing/null value renders as an empty string (the template can
+#     then omit that line)
+# Any variable added here becomes available in the ZPL template.
+fields:
+  ticket_id: "id"
+  created_date: "dateoccurred"
+  organization: "client_name"
+  site: "site_name"
+  end_user: "user_name"
+  # site_address's row on the label is intentionally left blank, reserved
+  # for a future field. To use it: uncomment and adjust the paths for
+  # your tenant's ticket JSON shape.
+  # site_address: ["delivery_address.line1", "delivery_address.line2"]
+# The print-qty custom field is read via HALO_LABEL_QTY_FIELD_NAME (.env)
+# and is not remappable here.
+
+# URL pattern the QR code encodes, opened in a browser to jump straight to
+# the ticket. {ticket_id} is substituted with the resolved ticket_id value.
+ticket_url_pattern: "https://YourHaloURLHere/portal.ticket?id={ticket_id}"

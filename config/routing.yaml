@@ -1,0 +1,8 @@
+# Maps a Halo ticket field value -> printer_id from printers.yaml.
+# match_field uses the same path syntax as fields.yaml (dotted path, or
+# "cf:<name>" for a custom field). First match wins; default_printer is
+# the fallback when nothing matches (all you need today, with one printer).
+match_field: "team"
+rules:
+  # "Facilities": "default"
+default_printer: "default"

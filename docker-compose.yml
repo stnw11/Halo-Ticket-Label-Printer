@@ -1,0 +1,15 @@
+# Note: Docker image/service/container names must be lowercase — the repo
+# itself is "Halo-Ticket-Label-Printer", but this stays lowercase-kebab.
+services:
+  halo-ticket-label-printer:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      - ./config:/app/config:ro
+    healthcheck:
+      # main.py touches /tmp/heartbeat at the top of every poll iteration;
+      # unhealthy if it goes stale for > 3 poll intervals (45s at the
+      # default 15s — keep this in sync if POLL_INTERVAL_SECONDS changes)
+      test: ["CMD", "python", "-c", "import os,sys,time; sys.exit(0 if time.time()-os.path.getmtime('/tmp/heartbeat')<45 else 1)"]
+      interval: 30s

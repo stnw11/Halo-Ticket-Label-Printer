@@ -1,0 +1,13 @@
+^XA
+^PW{{ px_width }}
+^LL{{ px_height }}
+^CI28
+^FO{{ ticket_id_x }},{{ ticket_id_y }}^A0R,{{ ticket_id_font_height }},{{ ticket_id_font_width }}^FB{{ ticket_id_block_width }},1,0,R,0^FD{{ ticket_id }}^FS
+^FO{{ qr_x }},{{ qr_y }}^BQR,2,{{ qr_magnification }}^FDMA,{{ qr_data }}^FS
+{% if organization %}^FO{{ organization_x }},{{ organization_y }}^A0R,{{ organization_font }},{{ organization_font }}^FD{{ organization }}^FS
+{% endif %}{% if site %}^FO{{ site_x }},{{ site_y }}^A0R,{{ site_font }},{{ site_font }}^FD{{ site }}^FS
+{% endif %}{% if end_user %}^FO{{ end_user_x }},{{ end_user_y }}^A0R,{{ end_user_font }},{{ end_user_font }}^FD{{ end_user }}^FS
+{% endif %}{% if site_address %}^FO{{ site_address_x }},{{ site_address_y }}^A0R,{{ site_address_font }},{{ site_address_font }}^FD{{ site_address }}^FS
+{% endif %}{% if created_date %}^FO{{ created_date_x }},{{ created_date_y }}^A0R,{{ created_date_font }},{{ created_date_font }}^FD{{ created_date }}^FS
+{% endif %}^PQ{{ qty }}
+^XZ
