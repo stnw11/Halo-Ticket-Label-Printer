@@ -77,7 +77,8 @@ the ticket.
    "Application identity" login if your version offers one; otherwise a
    dedicated API-only agent works identically for OAuth2
    client-credentials purposes. Scope permissions to only: read tickets
-   (list + get) and update the qty custom field.
+   (list + get), update the qty custom field, and create ticket notes/
+   actions (for the audit note — see below).
    - **Two permission layers, not one.** Granting the API application's
      own OAuth scopes is necessary but not always sufficient — some Halo
      versions separately enforce the underlying agent record's own
@@ -102,13 +103,21 @@ the ticket.
    - The token response's `scope` field, if your token is opaque (not a
      decodable JWT) — useful for debugging permission issues without
      needing to inspect the token itself.
+   - The payload shape for `POST /Actions` (creating the audit note): an
+     array-wrapped action object with `ticket_id`, `note`, and a
+     hidden-from-requester flag (this tenant: `hiddenfromuser: true`) —
+     confirm the exact flag name for yours. Check whether an `outcome`
+     field is required, and if so, what id represents a plain internal
+     note (`HALO_NOTE_OUTCOME_ID`); leave it blank if your tenant doesn't
+     need one.
 
 ## Configuration
 
 All hot-editable — no rebuild required for changes.
 
 - **`.env`** (secrets + core settings, never committed — copy
-  `.env.example` to start): Halo connection details, `POLL_INTERVAL_SECONDS`,
+  `.env.example` to start): Halo connection details, `HALO_NOTE_OUTCOME_ID`
+  (optional — see "HaloITSM one-time setup" above), `POLL_INTERVAL_SECONDS`,
   `MAX_LABELS_PER_JOB` (a fat-fingered quantity is clamped, not fatal),
   `LOG_LEVEL`.
 - **`config/printers.yaml`** — printer IP/port/dpi/label size per printer
@@ -200,10 +209,12 @@ the dot-math:
   printing and clearing, which is worse than a silently lost job.
   Recovery is manual: the agent notices no label appeared and re-enters
   the quantity.
-- **No on-ticket failure signal.** Outcome (success or failure) is only
-  visible in this service's own logs, not on the ticket itself. A failed
-  print (printer unplugged, out of media) leaves no trace an agent would
-  see without checking the logs.
+- **Note-posting is best-effort.** Every claimed ticket gets an internal
+  (agent-visible, not customer-visible) note recording the outcome — how
+  many labels were sent and to which printer, or the error if the print
+  failed. If posting the note itself fails (separately from the print),
+  that's only logged, never retried or treated as a print failure — so a
+  Halo-side note failure won't duplicate or block a job.
 - **Single instance only.** The claim step is safe only because there is
   exactly one writer. Do not run multiple replicas without adding real
   distributed locking.

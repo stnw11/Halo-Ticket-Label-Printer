@@ -1,10 +1,5 @@
-"""OAuth2 client-credentials token management and ticket read/claim
-operations against HaloITSM.
-
-Deliberately does not post an audit note back to the ticket on success or
-failure -- outcome is only visible in the service's own logs. See the
-README's "Known limitations" for the rationale and its consequences.
-"""
+"""OAuth2 client-credentials token management and ticket read/claim/note
+operations against HaloITSM."""
 
 import logging
 import time
@@ -31,6 +26,7 @@ class HaloClient:
         qty_field_id: str,
         qty_field_name: str,
         user_agent: str,
+        note_outcome_id: str | None = None,
         timeout: int = 10,
     ):
         self.base_url = base_url.rstrip("/")
@@ -41,6 +37,7 @@ class HaloClient:
         self.qty_field_id = qty_field_id
         self.qty_field_name = f"cf:{qty_field_name}"
         self.user_agent = user_agent
+        self.note_outcome_id = note_outcome_id
         self.timeout = timeout
         self._token: str | None = None
         self._token_expires_at: float = 0.0
@@ -109,6 +106,22 @@ class HaloClient:
         response = requests.post(
             f"{self.base_url}/api/Tickets",
             json=[{"id": ticket_id, "customfields": [{"id": self.qty_field_id, "value": "0"}]}],
+            headers=self._headers(),
+            timeout=self.timeout,
+        )
+        response.raise_for_status()
+
+    def add_note(self, ticket_id: str, text: str) -> None:
+        """Post an internal, agent-visible (not customer-visible) note to
+        the ticket recording the print outcome. Callers should treat this
+        as best-effort -- a note failure should never be conflated with a
+        print failure."""
+        action: dict = {"ticket_id": ticket_id, "note": text, "hiddenfromuser": True}
+        if self.note_outcome_id:
+            action["outcome"] = self.note_outcome_id
+        response = requests.post(
+            f"{self.base_url}/api/Actions",
+            json=[action],
             headers=self._headers(),
             timeout=self.timeout,
         )

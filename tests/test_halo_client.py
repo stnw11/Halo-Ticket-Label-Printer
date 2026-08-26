@@ -161,3 +161,46 @@ def test_claim_raises_on_http_error():
         mock_post.side_effect = [token_response, error_response]
         with pytest.raises(requests.HTTPError):
             client.claim("42")
+
+
+# --- add_note -------------------------------------------------------------
+
+
+def test_add_note_posts_expected_payload_shape():
+    client = make_client(note_outcome_id="7")
+    token_response = mock_response({"access_token": "abc123", "expires_in": 3600})
+    note_response = mock_response([{"id": 1}])
+    with patch("src.halo_client.requests.post") as mock_post:
+        mock_post.side_effect = [token_response, note_response]
+        client.add_note("42", "3 label(s) sent to Front Desk ZD411")
+    _, kwargs = mock_post.call_args
+    assert kwargs["json"] == [
+        {
+            "ticket_id": "42",
+            "note": "3 label(s) sent to Front Desk ZD411",
+            "hiddenfromuser": True,
+            "outcome": "7",
+        }
+    ]
+    assert kwargs["headers"]["Authorization"] == "Bearer abc123"
+
+
+def test_add_note_omits_outcome_when_not_configured():
+    client = make_client(note_outcome_id=None)
+    token_response = mock_response({"access_token": "abc123", "expires_in": 3600})
+    note_response = mock_response([{"id": 1}])
+    with patch("src.halo_client.requests.post") as mock_post:
+        mock_post.side_effect = [token_response, note_response]
+        client.add_note("42", "note text")
+    _, kwargs = mock_post.call_args
+    assert kwargs["json"] == [{"ticket_id": "42", "note": "note text", "hiddenfromuser": True}]
+
+
+def test_add_note_raises_on_http_error():
+    client = make_client()
+    token_response = mock_response({"access_token": "abc123", "expires_in": 3600})
+    error_response = mock_response({}, status_code=400)
+    with patch("src.halo_client.requests.post") as mock_post:
+        mock_post.side_effect = [token_response, error_response]
+        with pytest.raises(requests.HTTPError):
+            client.add_note("42", "note text")

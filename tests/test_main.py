@@ -154,6 +154,50 @@ def test_successful_ticket_claims_then_prints_with_clamped_qty():
     assert b"^PQ50" in zpl_arg  # clamped from 500 to 50
 
 
+# --- poll_once: audit note posting -----------------------------------------
+
+
+def test_successful_print_posts_success_note():
+    halo_client = MagicMock()
+    halo_client.get_pending.return_value = [make_ticket("1", qty=3)]
+
+    with patch("src.main.send"):
+        poll_once(halo_client, make_config(), max_labels_per_job=50)
+
+    halo_client.add_note.assert_called_once_with("1", "3 label(s) sent to Test Printer")
+
+
+def test_clamped_print_posts_note_mentioning_the_cap():
+    halo_client = MagicMock()
+    halo_client.get_pending.return_value = [make_ticket("1", qty=500)]
+
+    with patch("src.main.send"):
+        poll_once(halo_client, make_config(), max_labels_per_job=50)
+
+    halo_client.add_note.assert_called_once_with(
+        "1", "50 label(s) sent to Test Printer (requested 500, capped at 50)"
+    )
+
+
+def test_failed_print_posts_failure_note():
+    halo_client = MagicMock()
+    halo_client.get_pending.return_value = [make_ticket("1")]
+
+    with patch("src.main.send", side_effect=ConnectionError("printer unplugged")):
+        poll_once(halo_client, make_config(), max_labels_per_job=50)
+
+    halo_client.add_note.assert_called_once_with("1", "Label print failed: printer unplugged")
+
+
+def test_note_posting_failure_does_not_propagate():
+    halo_client = MagicMock()
+    halo_client.get_pending.return_value = [make_ticket("1")]
+    halo_client.add_note.side_effect = Exception("Halo unreachable for notes")
+
+    with patch("src.main.send"):
+        poll_once(halo_client, make_config(), max_labels_per_job=50)  # must not raise
+
+
 def test_get_pending_failure_propagates_for_caller_to_handle():
     halo_client = MagicMock()
     halo_client.get_pending.side_effect = ConnectionError("Halo unreachable")

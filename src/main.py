@@ -9,9 +9,8 @@ Error-handling rules this module must follow:
   Halo/API failure can kill the loop.
 - The container only ever exits on startup misconfiguration (bad YAML,
   missing env vars) -- fail fast there, with a clear message.
-
-No audit note is posted to the ticket on success or failure -- a failed
-print is visible only in these logs. See the README for details.
+- Posting the audit note is best-effort: a note failure is logged but
+  never treated as a print failure, and never blocks/retries the ticket.
 """
 
 import logging
@@ -101,7 +100,17 @@ def build_halo_client() -> HaloClient:
         qty_field_id=os.environ["HALO_LABEL_QTY_FIELD_ID"],
         qty_field_name=os.environ.get("HALO_LABEL_QTY_FIELD_NAME", "CFLabelPrintQty"),
         user_agent=DEFAULT_USER_AGENT,
+        note_outcome_id=os.environ.get("HALO_NOTE_OUTCOME_ID") or None,
     )
+
+
+def _add_note_best_effort(halo_client: HaloClient, ticket_id: str, text: str) -> None:
+    """Never let a note failure look like a print failure -- log and move
+    on."""
+    try:
+        halo_client.add_note(ticket_id, text)
+    except Exception:
+        logger.warning("ticket %s: failed to post audit note", ticket_id, exc_info=True)
 
 
 def touch_heartbeat() -> None:
@@ -135,7 +144,9 @@ def poll_once(halo_client: HaloClient, config: dict, max_labels_per_job: int) ->
                 config["ticket_url_pattern"],
             )
             send(printer, zpl)
+            note_text = f"{qty} label(s) sent to {printer.name}"
             if qty != ticket.label_print_qty:
+                note_text += f" (requested {ticket.label_print_qty}, capped at {max_labels_per_job})"
                 logger.info(
                     "ticket %s: requested %d label(s), capped at %d",
                     ticket.id,
@@ -143,8 +154,10 @@ def poll_once(halo_client: HaloClient, config: dict, max_labels_per_job: int) ->
                     max_labels_per_job,
                 )
             logger.info("ticket %s: sent %d label(s) to %s", ticket.id, qty, printer.name)
-        except Exception:
+            _add_note_best_effort(halo_client, ticket.id, note_text)
+        except Exception as e:
             logger.error("ticket %s: label print failed", ticket.id, exc_info=True)
+            _add_note_best_effort(halo_client, ticket.id, f"Label print failed: {e}")
         # one bad ticket never stops the rest of the batch
 
 
