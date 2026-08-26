@@ -115,11 +115,29 @@ the ticket.
 
 All hot-editable — no rebuild required for changes.
 
-- **`.env`** (secrets + core settings, never committed — copy
-  `.env.example` to start): Halo connection details, `HALO_NOTE_OUTCOME_ID`
-  (optional — see "HaloITSM one-time setup" above), `POLL_INTERVAL_SECONDS`,
-  `MAX_LABELS_PER_JOB` (a fat-fingered quantity is clamped, not fatal),
-  `LOG_LEVEL`.
+**First-time setup:** copy each `.example` file to its real name, then fill
+in your values:
+
+```
+cp .env.example .env
+cp config/printers.yaml.example config/printers.yaml
+cp config/fields.yaml.example config/fields.yaml
+cp config/routing.yaml.example config/routing.yaml
+```
+
+`.env` and all three `config/*.yaml` files (but not their `.example`
+templates) are gitignored. This is deliberate: they hold your real
+printer IP, Halo domain, and field mappings, so a future `git pull` to
+pick up code updates will never conflict with or overwrite your live
+configuration — only the `.example` templates update, same as `.env` vs.
+`.env.example` already worked. If a future version adds a new example
+field or setting, diff your real file against the updated `.example` and
+merge in whatever you want by hand.
+
+- **`.env`** (secrets + core settings): Halo connection details,
+  `HALO_NOTE_OUTCOME_ID` (optional — see "HaloITSM one-time setup" above),
+  `POLL_INTERVAL_SECONDS`, `MAX_LABELS_PER_JOB` (a fat-fingered quantity is
+  clamped, not fatal), `LOG_LEVEL`.
 - **`config/printers.yaml`** — printer IP/port/dpi/label size per printer
   id, plus `qr_magnification` (tune against a real printout).
 - **`config/routing.yaml`** — maps a ticket field value to a printer id,
@@ -127,7 +145,10 @@ All hot-editable — no rebuild required for changes.
   printer needs nothing beyond `default_printer`.
 - **`config/fields.yaml`** — Halo ticket JSON path -> label template
   variable, plus the QR code's `ticket_url_pattern`.
-- **`config/labels/default.zpl.j2`** — the Jinja2 ZPL template itself.
+- **`config/labels/default.zpl.j2`** — the Jinja2 ZPL template itself (not
+  gitignored — it's part of the label design, not per-deployment secrets;
+  if you heavily customize it, you'll want to handle merge conflicts on
+  future updates yourself).
 
 ## Local development
 
@@ -152,7 +173,8 @@ Tests: `pytest`.
 ## Docker deployment
 
 ```
-cp .env.example .env   # fill in your values
+# first time only -- see "Configuration" above for the full copy list
+cp .env.example .env
 docker compose up -d --build
 docker compose ps      # should show "healthy" within ~45s
 docker compose logs -f

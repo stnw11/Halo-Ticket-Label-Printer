@@ -1,4 +1,7 @@
 .env
+config/printers.yaml
+config/fields.yaml
+config/routing.yaml
 __pycache__/
 *.pyc
 .pytest_cache/
