@@ -23,4 +23,4 @@ fields:
 
 # URL pattern the QR code encodes, opened in a browser to jump straight to
 # the ticket. {ticket_id} is substituted with the resolved ticket_id value.
-ticket_url_pattern: "https://YourHaloURLHere/portal.ticket?id={ticket_id}"
+ticket_url_pattern: "https://YourHaloURLHere/ticket?id={ticket_id}"

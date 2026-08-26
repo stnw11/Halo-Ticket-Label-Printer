@@ -45,6 +45,11 @@ the same template works on a 300 dpi printer too — see that file's
 comments for the dot-math, and "Known ZPL quirks" below for two
 non-obvious rotation behaviors worth knowing before changing it.
 
+This layout has been validated end-to-end on real Zebra ZD411 hardware:
+correct orientation, all fields positioned without clipping or overlap,
+correct physical dimensions (2" x 4"), and a QR code that scans cleanly to
+the ticket.
+
 ## HaloITSM one-time setup
 
 1. **Custom field.** Configuration > Custom Fields > new Integer field
